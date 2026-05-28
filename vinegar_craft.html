@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>醋经 · 风味的旅途</title>
+<link rel="stylesheet" href="vinegar_craft.css">
+</head>
+<body>
+<div id="title-screen"><h1>醋 经</h1><h2>风味的旅途</h2><button id="start-btn" type="button">开始游戏</button></div>
+
+<!-- 地窖 -->
+<div id="cellar-screen">
+  <div id="cellar-topbar">
+    <div style="display:flex;align-items:center;gap:18px">
+      <h3>🏺 酿醋地窖</h3>
+      <span style="font-size:12px;color:#9a7040">第 <b id="cellar-day-num" style="color:#ffd700">1</b> 天</span>
+      <span style="font-size:12px;color:#9a7040">铜钱 <b id="cellar-money-num" style="color:#ffd700">30</b></span>
+    </div>
+    <button class="act-btn primary" style="font-size:13px;padding:8px 22px" onclick="leaveCellar()">完成操作，进入探索 →</button>
+  </div>
+  <div id="cellar-body">
+    <div id="cellar-jars"><h4>醋 坛</h4><div id="jar-list"></div></div>
+    <div id="cellar-panel">
+      <div id="cellar-panel-title">选择一个醋坛</div>
+      <div id="cellar-jar-status">↖ 点击左侧醋坛查看，或新建一坛</div>
+      <div id="cellar-controls" style="display:none">
+        <div class="cellar-ctrl-row" style="font-size:12px;color:#c9a227;margin-bottom:4px">📐 选择食材后设置移动步数，点击「添加到路线」</div>
+        <div class="cellar-ctrl-row" style="align-items:center;gap:10px">
+          <label style="min-width:36px">步数</label>
+          <button class="cellar-stir-btn" onclick="cellarStepMinus()" style="padding:2px 10px;font-size:15px">－</button>
+          <span class="ctrl-val" id="cellar-step-val" style="min-width:28px;text-align:center;font-size:16px;color:#ffd700">1</span>
+          <button class="cellar-stir-btn" onclick="cellarStepPlus()" style="padding:2px 10px;font-size:15px">＋</button>
+          <button class="cellar-stir-btn" id="cellar-add-step-btn" onclick="cellarAddStep()" style="background:rgba(60,120,40,0.85);border-color:#6a4;padding:4px 14px;font-size:12px">添加到路线</button>
+        </div>
+      </div>
+      <div id="cellar-route-wrap">
+        <h5>🗺 发酵路线预览</h5>
+        <canvas id="cellar-route-canvas" width="300" height="180" onclick="onCellarRouteClick(event)"></canvas>
+        <div id="cellar-route-hint">选食材后点击地图移动</div>
+        <div id="cellar-route-steps">今日进程：0 步</div>
+      </div>
+      <button id="cellar-preview-btn" class="cellar-action-btn" style="display:none;background:rgba(60,100,40,0.8);border-color:#6a4" onclick="previewMapFromCellar()">🗺 大地图预览</button>
+      <div id="cellar-vinegar-panel">
+        <h5>可收取醋</h5>
+        <div id="cellar-vinegar-list"></div>
+      </div>
+      <button class="cellar-action-btn" id="cellar-confirm-btn" onclick="confirmCellarAction()">确认今日操作</button>
+      <button class="cellar-action-btn" id="cellar-new-btn" onclick="newJar()">＋ 新开一坛醋</button>
+      <div id="cellar-used-notice">今日已操作完毕，明日再来</div>
+      <div id="cellar-dlg"><div id="cellar-dlg-text">地窖里凉意阵阵，醋坛静静发酵。选醋坛→选食材→设步数→添加到路线，确认后醋坛沿路线自动前进。</div></div>
+    </div>
+    <div id="cellar-ing-panel">
+      <h4>选 材 料</h4>
+      <div style="font-size:10px;color:#6a4020;text-align:center;margin-bottom:7px;line-height:1.5">选择食材后<br>点击「预览路线」<br>在大地图确认方向</div>
+      <div id="cellar-ing-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 地图 -->
+<div id="map-screen">
+  <div id="map-topbar">
+    <div class="t-title">🌄 风味地图</div>
+    <div class="stats"><span>第 <b id="ui-day">1</b> 天</span><span>铜钱 <b id="ui-money">30</b></span><span>探索 <b id="ui-steps">0</b> 步</span></div>
+    <div class="t-tip">发酵进行中……醋坛正沿地窖规划的路线自动前进，途经自动触发知识点</div>
+    <button id="map-back-cellar-btn" class="act-btn" style="position:absolute;top:52px;left:14px;display:none;font-size:12px;padding:5px 14px;z-index:61;background:rgba(100,60,20,0.9);border-color:#cd853f;color:#ffd700" onclick="goBackToCellar()">↩ 返回地窖</button>
+  </div>
+  <div id="side-left"><h3>今日食材</h3><div id="ingred-list"></div><div style="font-size:10px;color:#6a4a8a;text-align:center;margin-top:8px;padding:6px;background:rgba(60,40,80,0.15);border-radius:6px">路线由地窖规划<br>醋坛自动前进</div></div>
+  <div id="map-area"><canvas id="map-canvas"></canvas></div>
+  <div id="side-right"><h3>规划路线</h3><div id="path-preview-wrap"><canvas id="preview-canvas" width="200" height="200"></canvas></div><div id="island-tags"></div></div>
+  <div id="bottom-bar">
+    <button class="act-btn" onclick="mapUndo()" id="btn-undo" style="display:none">↩ 撤销</button>
+    <button class="act-btn" onclick="resumeAutoMove()" id="btn-resume" style="display:none;background:rgba(60,120,60,0.9);border-color:#5a5">▶ 继续前进</button>
+    <button class="act-btn primary" onclick="mapFinish()" id="btn-finish">✿ 完成探索</button>
+    <button class="act-btn" onclick="mapReset()" id="btn-reset" style="display:none">⟳ 重置</button>
+  </div>
+</div>
+
+<div id="brew-summary-overlay">
+  <div id="brew-summary-box">
+    <h2>🍶 今日酿造总结</h2>
+    <div class="bs-sub">地窖中的醋坛正在静静发酵……\n━━ 历史路线（实线）= 往日发酵轨迹\n━━ 今日路线（虚线）= 今日规划</div>
+    <div id="brew-summary-list"></div>
+    <button id="brew-summary-btn">🌄 开始探索风味地图</button>
+  </div>
+</div>
+
+<!-- 坛子选择界面 -->
+<div id="jar-select-overlay">
+  <div id="jar-select-box">
+    <h2>🗺 选择探索的醋坛</h2>
+    <div class="js-sub">地窖规划已就绪，选择一口醋坛进入风味地图探索</div>
+    <div id="jar-select-list"></div>
+    <div id="jar-select-progress">已探索：<span id="js-done-count">0</span> / <span id="js-total-count">0</span></div>
+    <button id="jar-select-done-btn" onclick="allJarsExplored()" style="display:none">全部探索完毕 · 进入结算</button>
+  </div>
+</div>
+
+<div id="know-overlay">
+  <div id="know-box">
+    <div class="know-icon">📖</div>
+    <h3 id="know-title">酿醋小知识</h3>
+    <div class="know-text" id="know-text"></div>
+    <button id="know-btn" onclick="closeKnowledge()">继续探索</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="red-alert" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(200,40,40,0.95);color:#fff;padding:20px 40px;border-radius:16px;font-size:16px;font-weight:bold;letter-spacing:2px;z-index:1200;text-align:center;box-shadow:0 0 40px rgba(200,40,40,0.8)"></div>
+<div id="modal-overlay"><div id="modal-box"><h2 id="m-title">探索结算</h2><div class="m-info" id="m-desc"></div><div class="m-earn" id="m-earn"></div><div class="m-islands" id="m-islands"></div><button class="act-btn primary" onclick="closeModal()">明日再来</button></div></div>
+
+<script src="vinegar_craft.js"></script>
+</body>
+</html>
